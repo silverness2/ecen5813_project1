@@ -1,3 +1,18 @@
+/*******************************************************************************
+ *
+ * Copyright (C) 2019 by Shilpi Gupta
+ *
+ ******************************************************************************/
+
+/*
+ * @file main.c
+ * @brief A program for interactive memory manipulaton.
+ *
+ * @author Shilpi Gupta
+ * @date February 18, 2019
+ * @version 1.0
+*/
+
 #include <stdio.h> // for getline
 #include <stdlib.h> // for free
 #include <string.h> // for strcmp
@@ -51,7 +66,7 @@ int main(int argc, char **argv)
 {
     int num_read = 0;
     size_t num_bytes = 0;
-    char *line;
+    char *line = NULL;
 
     show_greeting();
 
