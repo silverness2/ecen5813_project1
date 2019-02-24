@@ -14,8 +14,11 @@
 */
 
 #include <stdio.h> // for getline
-#include <stdlib.h> // for free
+#include <stdlib.h> // for malloc, free, NULL
 #include <string.h> // for strcmp
+#include "mem_manip.h"
+
+#define CMD_LEN 32
 
 void show_greeting()
 {
@@ -35,8 +38,8 @@ void show_help()
 
     printf("help\n\tShow all commands.\n\n");
 
-    printf("allocate num_bytes\n\tAllocate num_bytes bytes of memory to be "
-           "used by application.\n\n");
+    printf("alloc num_words\n\tAllocate num_words words of memory (1 word = "
+           "32 bytes) to be used by\n\tapplication.\n\n");
 
     printf("free\n\tFree previously allocated block of memory.\n\n");
 
@@ -67,6 +70,8 @@ int main(int argc, char **argv)
     int num_read = 0;
     size_t num_bytes = 0;
     char *line = NULL;
+    int num_words = 10;
+    char *words = NULL;
 
     show_greeting();
 
@@ -92,14 +97,33 @@ int main(int argc, char **argv)
         {
             show_help();
         }
+        else if (strncmp(line, "alloc", strlen("alloc")) == 0)
+        {
+            char cmd[CMD_LEN];
+            int num_args = sscanf(line, "%s %d", cmd, &num_words);
+            if (num_args != 2)
+            {
+               printf("ERROR: Incorrect argument provided.\n");
+            }
+            else
+            {     
+	        alloc_mem(&words, num_words);
+            }
+        }
+        else if (strcmp(line, "free\n") == 0)
+        {
+            free_mem(&words);
+        }
         else
         {
             printf("Invalid commnd - try again.\n");
         }
+
+        // Free memory.
+        free(line);
+        line = NULL;
+        num_bytes = 0;
     } while (1);
     
-    // Free memory.
-    free(line);
-
     return (EXIT_SUCCESS);
 }
