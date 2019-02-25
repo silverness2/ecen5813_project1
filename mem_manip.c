@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /*
- * @file main.c
+ * @file mem_manip.c
  * @brief Library definitions for interactive memory manipulaton.
  *
  * @author Shilpi Gupta

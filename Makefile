@@ -1,5 +1,8 @@
 CFLAGS = -Wall -Werror
 
+test: main testscript
+	./main < testscript
+
 main: main.o mem_manip.o
 	gcc -o main main.o mem_manip.o
 
