@@ -31,7 +31,7 @@ long int get_time_usecs()
 
 void alloc_mem(int32_t **words, int total_words)
 {
-    // Check no memory allocated.
+    // Check that no memory has been allocated.
     if (*words != NULL)
     {
         printf("alloc_mem(): ERROR: Cannot allocate memory because memory " \
@@ -139,9 +139,6 @@ void show(int word_offset, int num_words, const int32_t *words,
 
         printf("At word=%d and address=%p, int value=%d and hex value="
                "0x%04x\n", i, (words + i), *(words + i), *(words + i));
-
-       // printf("At offset: %d, value is: %d (hex is: 0x%04x)\n", i,
-         //      *(words + i), *(words + i));
     }
 }
 
