@@ -9,29 +9,40 @@
  * @brief Library definitions for interactive memory manipulaton.
  *
  * @author Shilpi Gupta
- * @date February 24, 2019
- * @version Sprint 2
+ * @date March 11, 2019
+ * @version Sprint 3
 */
 
-#include "mem_manip.h"
 #include <stdio.h> // printf
 #include <stdlib.h> // malloc, free, NULL
 #include <string.h>
-#include <sys/time.h>
-#include <stdbool.h>
+#include <time.h>
+#include "mem_manip.h"
+#include "prng.h"
 
-long int get_time_usecs()
+int is_mem_valid(int32_t **words)
 {
-    struct timeval curr_time;
-    gettimeofday(&curr_time, NULL);
+    if (*words == NULL)
+    {
+        printf("ERROR: No memory allocated.\n");
+        return 0;
+    }
+    return 1;
+}
 
-    // Return time in microseconds.
-    return ((curr_time.tv_sec * 1000000L) + curr_time.tv_usec);
+int is_offset_valid(int word_offset, int total_words)
+{
+    if (word_offset >= total_words)
+    {
+        printf("ERROR: Cannot write. Invalid memory location.\n");
+        return 0;
+    }
+    return 1;
 }
 
 void alloc_mem(int32_t **words, int total_words)
 {
-    // Check that no memory has been allocated.
+    // Verify memory not already allocated.
     if (*words != NULL)
     {
         printf("alloc_mem(): ERROR: Cannot allocate memory because memory " \
@@ -39,10 +50,11 @@ void alloc_mem(int32_t **words, int total_words)
         return;
     }
 
-    // Allocate memory.
+    // Allocate memory & set all values to 0.
     *words = malloc(total_words * sizeof(int32_t));
+    memset(*words, 0, total_words*sizeof(int32_t));
 
-    // Check success.
+    // Verify success.
     if (*words == NULL)
     {
         printf("alloc_mem(): ERROR: Unable to allocate %d words of memory.\n", \
@@ -56,13 +68,14 @@ void alloc_mem(int32_t **words, int total_words)
     }
 }
 
-void free_mem(int32_t **words)
+void free_mem(int32_t **words, int total_words)
 {
     // Free memory.
     if (*words)
     {
         free(*words);
         *words = NULL;
+          
         printf("free_mem(): Freed all allocated memory.\n");
     }
     else
@@ -71,90 +84,187 @@ void free_mem(int32_t **words)
     }
 }
 
-void write(const int value, int word_offset, int **words, int total_words)
+void write_offset(int value, int word_offset, int **words, int total_words)
 {
-    if (*words == NULL)
-    {
-        printf("write(): ERROR: Cannot write. No memory allocated.\n");
-        return;
-    }
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+    if (!is_offset_valid(word_offset, total_words)) { return; }
 
-    if (word_offset >= total_words)
-    {
-        printf("write(): ERROR: Cannot write. Invalid memory location.\n");
-        return;
-    }
-
+    // Write value at offset.
     *(*words + word_offset) = value;
 }
 
-void write_a(const int value, int32_t *addr, int **words, int total_words)
+void write_address(int value, int32_t *addr, int **words, int total_words)
 {
-    if (*words == NULL)
-    {
-        printf("write(): ERROR: Cannot write. No memory allocated.\n");
-        return;
-    }
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
 
-    bool found = false;
+    // Write value at address.
     for (int i = 0; i < total_words; i++)
     {
         if (addr == (*words + i))
         {
-            found = true;
             *(*words + i) = value;
-            break;
+            return;
         }
     }
 
-    if (found == false)
+    // No matching address found.
+    printf("write_address(): ERROR: Invalid memory address (%p) provided. "
+           "Valid addresses are:\n", addr);
+    show_all_addr(*words, total_words);
+}
+
+void invert(int word_offset, int32_t **words, int total_words)
+{
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+    if (!is_offset_valid(word_offset, total_words)) { return; }
+  
+    // Invert. 
+    *(*words + word_offset) =~ *(*words + word_offset);
+}
+
+void write_offset_pattern(int word_offset, int num_words, int seed, \
+                          int32_t **words, int total_words)
+{
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+    if (!is_offset_valid(word_offset, total_words)) { return; }
+
+    // Use PRNG to generate a pattern of randome numbers.
+    uint32_t seed_u = (uint32_t)seed; 
+    uint32_t *state = &seed_u;
+    for (int i = 0; i < num_words; i++)
     {
-        printf("write(): ERROR: Invalid memory address provided. Valid "
-               "addresses are:\n");
-        for (int i = 0; i < total_words; i++)
-        {
-	    printf("At offset %d, address is: %p\n", i,
-                   (*words + i));
-        }
+        *state = lcg_parkmiller(state);
+        write_offset((int32_t)(*state), word_offset + i, words, total_words);
     }
 }
 
-void show(int word_offset, int num_words, const int32_t *words,
-          int total_words)
+void write_address_pattern(int32_t *addr, int num_words, int seed, \
+                           int32_t **words, int total_words)
 {
-    if (words == NULL)
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+
+    // Use PRNG to generate a pattern of randome numbers.
+    uint32_t seed_u = (uint32_t)seed; 
+    uint32_t *state = &seed_u;
+    for (int i = 0; i < num_words; i++)
     {
-        printf("show(): ERROR: Cannot show. No memory allocated.\n");
+        *state = lcg_parkmiller(state);
+        write_address((int32_t)(*state), addr + i, words, total_words);
+    }
+}
+
+void verify_offset_pattern(int word_offset, int num_words, int seed, \
+                           int32_t **words, int total_words)
+{
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+    if (!is_offset_valid(word_offset, total_words)) { return; }
+    if (word_offset + num_words > total_words)
+    {
+        printf("verify_offset_pattern(): ERROR: Invalid memory location.\n");
         return;
     }
 
-    if (word_offset >= total_words || word_offset + num_words > total_words)
+    // Use PRNG to generate a pattern of random numbers.
+    uint32_t seed_u = (uint32_t)seed; 
+    uint32_t *state = &seed_u;
+    for (int i = 0; i < num_words; i++)
     {
-        printf("write(): ERROR: Cannot show. Invalid memory location.\n");
+        // Check for a match.
+        *state = lcg_parkmiller(state);
+        if (*state != *(*words + word_offset + i))
+        {
+            printf("No Match!: ");
+        }
+        else
+        {
+            printf("Match!: ");
+        }
+        printf("seed=%d, word=%d, expected=%d, and actual=%d\n", seed, \
+               word_offset + i, *(*words + word_offset + i), *state);
+    }
+}
+
+void verify_address_pattern(int32_t *addr, int num_words, int seed, \
+                            int32_t **words, int total_words)
+{
+    // Verify memory.
+    if (!is_mem_valid(words)) { return; }
+
+    // Use PRNG to generate a pattern of randome numbers.
+    uint32_t seed_u = (uint32_t)seed; 
+    uint32_t *state = &seed_u;
+    for (int i = 0; i < num_words; i++)
+    {
+        // Verify address exists.
+        int found = 0;
+        for (int n = 0; n < total_words; n++)
+        {
+            if ((addr + i) == (*words + n))
+            {
+                found = 1;
+            }
+        }
+        if (found == 0)
+        {
+            printf("verify_address_pattern(): ERROR: Address (%p) does not "
+                   "exist.\n", (addr + i));
+            continue;
+        }
+
+        // Check for a match.
+        *state = lcg_parkmiller(state);
+        if (*state != *(addr + i))
+        {
+            printf("No Match!: ");
+        }
+        else
+        {
+            printf("Match!: ");
+        }
+        printf("seed=%d, addr=%p, expected=%d, and actual=%d\n", seed, \
+               (addr + i), *(addr + i), *state);
+    }
+}
+
+void show(int word_offset, int num_words, int32_t *words, int total_words)
+{
+    if (words == NULL)
+    {
+        printf("show(): ERROR: No memory allocated.\n");
+        return;
+    }
+
+    if (!is_offset_valid(word_offset, total_words) || 
+        (word_offset + num_words) > total_words)
+    {
+        printf("write(): ERROR: Invalid memory location.\n");
         return;
     }
 
     for (int i = word_offset; i < word_offset + num_words; i++)
     {
-
         printf("At word=%d and address=%p, int value=%d and hex value="
                "0x%04x\n", i, (words + i), *(words + i), *(words + i));
     }
 }
 
-void invert(int word_offset, int32_t **words, int total_words)
+void show_all_addr(int32_t *words, int total_words)
 {
-    if (*words == NULL)
+
+    if (words == NULL)
     {
-        printf("invert(): ERROR: Cannot write. No memory allocated.\n");
+        printf("show_all_addr(): ERROR: No memory allocated.\n");
         return;
     }
 
-    if (word_offset >= total_words)
+    for (int i = 0; i < total_words; i++)
     {
-        printf("invert(): ERROR: Cannot write. Invalid memory location.\n");
-        return;
+        printf("At word=%d, address=%p\n", i, (words + i));
     }
-   
-    *(*words + word_offset) =~ *(*words + word_offset);
 }

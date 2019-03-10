@@ -4,13 +4,19 @@ show
 write 1 15
 free
 alloc 4
-write 0 58
-write 1 59
-write 2 60
+wo 0 58
+wo 1 59
+wo 2 60
 show
 invert 2
-write 8 61
+wo 8 61
 show
-write 3 61
+wo 3 61
 show
+free
+alloc 5
+wop 0 5 64
+show
+vop 0 5 64
+vop 0 5 23
 exit
