@@ -52,7 +52,7 @@ struct Cmd cmd_list[] =
     {"free", 1, (cmd_fp)free_mem},    // 3
     {"wa", 3, (cmd_fp)write_address}, // 4
     {"wo", 3, (cmd_fp)write_offset},  // 5
-    {"show", 1, (cmd_fp)show},        // 6
+    {"show", 3, (cmd_fp)show},        // 6
     {"invert", 2, (cmd_fp)invert},    // 7
     {"wop", 4, (cmd_fp)write_offset_pattern},  // 8
     {"wap", 4, (cmd_fp)write_address_pattern}, // 9
