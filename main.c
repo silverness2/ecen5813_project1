@@ -67,6 +67,7 @@ int main(int argc, char **argv)
     BOARD_InitPins();
     BOARD_BootClockRUN();
     BOARD_InitDebugConsole();
+    Init_Systick();
     #endif
 
     int total_words = 0;
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
                 #ifdef LINUX
                 start_time = get_time_usecs();
                 #else
-                start_cylce_count();
+                set_cycle_count(0);
                 #endif
 
                 ((fp_invert)cmd_list[cmd_num].fp)(word_offset, &words, \
@@ -204,7 +205,7 @@ int main(int argc, char **argv)
                 #ifdef LINUX
                 start_time = get_time_usecs();
                 #else
-                start_cylce_count();
+                set_cycle_count(0);
                 #endif
 
                 ((fp_write_offset_pattern)cmd_list[cmd_num].fp)(word_offset, \
@@ -228,7 +229,7 @@ int main(int argc, char **argv)
                 #ifdef LINUX
                 start_time = get_time_usecs();
                 #else
-                start_cylce_count();
+                set_cycle_count(0);
                 #endif
 
                 ((fp_write_address_pattern)cmd_list[cmd_num].fp)(addr, \
@@ -252,7 +253,7 @@ int main(int argc, char **argv)
                 #ifdef LINUX
                 start_time = get_time_usecs();
                 #else
-                start_cylce_count();
+                set_cycle_count(0);
                 #endif
 
                 ((fp_verify_offset_pattern)cmd_list[cmd_num].fp)(word_offset, \
@@ -276,7 +277,7 @@ int main(int argc, char **argv)
                 #ifdef LINUX
                 start_time = get_time_usecs();
                 #else
-                start_cylce_count();
+                set_cycle_count(0);
                 #endif
 
                 ((fp_verify_address_pattern)cmd_list[cmd_num].fp)(addr, \
