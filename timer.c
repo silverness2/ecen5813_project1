@@ -32,11 +32,14 @@ void print_elapsed_time(long int time, char msg[256])
     PRINTF("%s - Elapsed time was: %ld usecs\n", msg, time);
 }
 
-#else
+#endif
+
+#ifdef FRDM
 
 void start_cylce_count()
 {
-    uint16_t ret = SysTick_Config(16000000); // start the cycle count
+    // Generate an interrupt every millisecond; start cycle count.
+    uint16_t ret = SysTick_Config(SystemCoreClock/1000);
     if (ret)
     {
         PRINTF("start_cycle_count(): ERROR: Cannot start cycle count.\n");
@@ -45,8 +48,12 @@ void start_cylce_count()
 
 void print_elapsed_count(char msg[256])
 {
-    uint32_t ret = 16000000 - SysTick->VAL; // stops the cycle count
+    uint32_t ret = (SystemCoreClock/1000) - SysTick->VAL; // stope cycle count
     PRINTF("%s - Elapsed cycle count was: %d cycles\n", msg, ret);
 }
+
+/*void SysTick_Handler(void)
+{
+}*/
 
 #endif
