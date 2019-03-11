@@ -17,7 +17,7 @@
 */
 
 #include "macro.h"
-#include <stdio.h>  // for getline
+#include <stdio.h>
 #include <stdlib.h> // for malloc, free, NULL
 #include <string.h> // for strcmp
 #include <stdint.h> // for int32_t
@@ -80,13 +80,21 @@ int main(int argc, char **argv)
         // Show prompt.
         show_prompt();
 
-        // Read user input and check for error.
+        // Read user input and check for read error.
+        char c;
+        int count = 0;
         char line[LINE_LEN];
-        if (fgets(line, LINE_LEN, stdin) == NULL)
+        while ((c = GETCHAR()) != '\n')
         {
-            PRINTF("Error reading input. Exiting.");
-            return (EXIT_FAILURE);
+           if (c == EOF)
+           {
+	       PRINTF("Error reading input. Exiting.");
+               return (EXIT_FAILURE);
+           }
+           line[count] = c;
+           count++;
         }
+        line[count] = '\0';
 
         // Get command name.
         int cmd_num = -1;
