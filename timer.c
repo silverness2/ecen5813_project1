@@ -57,10 +57,7 @@ void print_elapsed_count(char msg[256])
 void Init_Systick()
 {
     cycle_count = 0;
-    /*SYST_RVR =  CORE_CLOCK/1000u; //core_clock is 48 million
-    SYST_CVR = 0; //current value to zero
-    SYST_CSR = 0x7; //see register*/
-    SysTick->LOAD =  SystemCoreClock/1000u; //core_clock is 48 million
+    SysTick->LOAD =  SystemCoreClock/4000u; //core_clock is 48 million
     SysTick->VAL = 0; //current value to zero
     SysTick->CTRL = 0x7; //see register
 }
