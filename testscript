@@ -15,8 +15,8 @@ wo 3 61
 show
 free
 alloc 5
-wop 0 5 64
+wop 0 5 63
 show
-vop 0 5 64
+vop 0 5 63
 vop 0 5 23
 exit

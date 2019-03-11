@@ -16,10 +16,7 @@
  * https://stackoverflow.com/questions/7670766/c-how-can-i-use-a-single-function-pointer-array-for-functions-with-variable-par
 */
 
-
-// TODO
-// timing (long problem?)
-
+#include "macro.h"
 #include <stdio.h>  // for getline
 #include <stdlib.h> // for malloc, free, NULL
 #include <string.h> // for strcmp
@@ -28,7 +25,15 @@
 #include "mem_manip.h"
 #include "timer.h"
 
+#ifdef FRDM
+#include "fsl_device_registers.h"
+#include "fsl_debug_console.h"
+#include "board.h"
+#include "pin_mux.h"
+#endif
+
 #define CMD_LEN 32
+#define LINE_LEN 1024
 
 typedef void (*cmd_fp)(void);
 
@@ -57,9 +62,13 @@ struct Cmd cmd_list[] =
 
 int main(int argc, char **argv)
 {
-    int num_bytes_read = 0;
-    size_t num_line_bytes = 0;
-    char *line = NULL;
+    #ifdef FRDM
+    // Init board hardware.
+    BOARD_InitPins();
+    BOARD_BootClockRUN();
+    BOARD_InitDebugConsole();
+    #endif
+
     int total_words = 0;
     int32_t *words = NULL;
     int num_cmds = sizeof(cmd_list) / sizeof(cmd_list[0]);
@@ -71,15 +80,11 @@ int main(int argc, char **argv)
         // Show prompt.
         show_prompt();
 
-        // Read user input.
-        num_bytes_read = getline(&line, &num_line_bytes, stdin);
-
-        // Check for read error.
-        if (num_bytes_read < 0)
+        // Read user input and check for error.
+        char line[LINE_LEN];
+        if (fgets(line, LINE_LEN, stdin) == NULL)
         {
-            printf("Error reading input. Exiting.");
-            free(line);
-            line = NULL;
+            PRINTF("Error reading input. Exiting.");
             return (EXIT_FAILURE);
         }
 
@@ -102,8 +107,10 @@ int main(int argc, char **argv)
         int32_t value;
         int word_offset;
         int num_words;
-        long int start_time, end_time;
         int seed;
+        #ifdef LINUX
+        long int start_time, end_time;
+        #endif
 
         // Parse and process command.
         switch(cmd_num)
@@ -164,12 +171,21 @@ int main(int argc, char **argv)
             num_args = sscanf(line, "%s %d", cmd, &word_offset);
             if (is_valid_num_args(num_args, cmd_list[cmd_num].num_args))
             {
+                #ifdef LINUX
                 start_time = get_time_usecs();
+                #else
+                start_cylce_count();
+                #endif
+
                 ((fp_invert)cmd_list[cmd_num].fp)(word_offset, &words, \
                                                   total_words);
+                #ifdef LINUX
                 end_time = get_time_usecs();
                 print_elapsed_time(elapsed_time(start_time, end_time), \
                                    "main(): invert");
+                #else
+                print_elapsed_count("main(): invert");
+                #endif
             }
             break;
         case 8: // wop
@@ -177,14 +193,23 @@ int main(int argc, char **argv)
                               &num_words, &seed);
             if (is_valid_num_args(num_args, cmd_list[cmd_num].num_args))
             {
+                #ifdef LINUX
                 start_time = get_time_usecs();
+                #else
+                start_cylce_count();
+                #endif
+
                 ((fp_write_offset_pattern)cmd_list[cmd_num].fp)(word_offset, \
                                                                 num_words,\
                                                                 seed, &words, \
                                                                 total_words);
+                #ifdef LINUX
                 end_time = get_time_usecs();
                 print_elapsed_time(elapsed_time(start_time, end_time), \
                                    "main(): wop");
+                #else
+                print_elapsed_count("main(): wop");
+                #endif
             }
             break;
         case 9: // wap
@@ -192,14 +217,23 @@ int main(int argc, char **argv)
                               &seed);
             if (is_valid_num_args(num_args, cmd_list[cmd_num].num_args))
             {
+                #ifdef LINUX
                 start_time = get_time_usecs();
+                #else
+                start_cylce_count();
+                #endif
+
                 ((fp_write_address_pattern)cmd_list[cmd_num].fp)(addr, \
                                                                  num_words,\
                                                                  seed, &words, \
                                                                  total_words);
+                #ifdef LINUX
                 end_time = get_time_usecs();
                 print_elapsed_time(elapsed_time(start_time, end_time), \
                                    "main(): wap");
+                #else
+                print_elapsed_count("main(): wap");
+                #endif
             }
             break;
         case 10: // vop
@@ -207,14 +241,23 @@ int main(int argc, char **argv)
                               &num_words, &seed);
             if (is_valid_num_args(num_args, cmd_list[cmd_num].num_args))
             {
+                #ifdef LINUX
                 start_time = get_time_usecs();
+                #else
+                start_cylce_count();
+                #endif
+
                 ((fp_verify_offset_pattern)cmd_list[cmd_num].fp)(word_offset, \
                                                                  num_words,\
                                                                  seed, &words, \
                                                                  total_words);
+                #ifdef LINUX
                 end_time = get_time_usecs();
                 print_elapsed_time(elapsed_time(start_time, end_time), \
                                    "main(): vop");
+                #else
+                print_elapsed_count("main(): vop");
+                #endif
             }
             break;
         case 11: // vap
@@ -222,26 +265,30 @@ int main(int argc, char **argv)
                               &seed);
             if (is_valid_num_args(num_args, cmd_list[cmd_num].num_args))
             {
+                #ifdef LINUX
                 start_time = get_time_usecs();
+                #else
+                start_cylce_count();
+                #endif
+
                 ((fp_verify_address_pattern)cmd_list[cmd_num].fp)(addr, \
                                                                   num_words,\
                                                                   seed, \
                                                                   &words, \
                                                                   total_words);
+                #ifdef LINUX
                 end_time = get_time_usecs();
                 print_elapsed_time(elapsed_time(start_time, end_time), \
                                    "main(): vap");
+                #else
+                print_elapsed_count("main(): vap");
+                #endif
             }
             break;
         default:
-            printf(ERROR_BAD_CMD);
+            PRINTF(ERROR_BAD_CMD);
             break;
         }
-
-        // Free memory.
-        free(line);
-        line = NULL;
-        num_line_bytes = 0;
     } while (1);
     
     return (EXIT_SUCCESS);
